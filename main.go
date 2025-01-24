@@ -100,6 +100,7 @@ func main() {
 	// настройте подключение к БД
 	db, err := sql.Open("sqlite", "tracker.db")
 	if err != nil {
+		fmt.Printf("Ошибка подключения к базе данных: %v\n", err)
 		return
 	}
 	defer db.Close()

@@ -86,18 +86,20 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 func (s ParcelStore) SetAddress(number int, address string) error {
 	// реализуйте обновление адреса в таблице parcel
 	// менять адрес можно только если значение статуса registered
-	row := s.db.QueryRow("SELECT status FROM parcel WHERE number = :number", sql.Named("number", number))
-	var status string
-	err := row.Scan(&status)
+	res, err := s.db.Exec("UPDATE parcel SET address = :address WHERE status = :status AND number = :number ",
+		sql.Named("address", address),
+		sql.Named("status", ParcelStatusRegistered),
+		sql.Named("number", number))
 	if err != nil {
 		return err
 	}
 
-	if status == ParcelStatusRegistered {
-		_, err = s.db.Exec("UPDATE parcel SET address = :address WHERE number = :number", sql.Named("address", address), sql.Named("number", number))
-		if err != nil {
-			return err
-		}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("посылка не найдена или неверный статус")
 	}
 	return nil
 }
@@ -105,18 +107,17 @@ func (s ParcelStore) SetAddress(number int, address string) error {
 func (s ParcelStore) Delete(number int) error {
 	// реализуйте удаление строки из таблицы parcel
 	// удалять строку можно только если значение статуса registered
-	row := s.db.QueryRow("SELECT status FROM parcel WHERE number = :number", sql.Named("number", number))
-	var status string
-	err := row.Scan(&status)
+	res, err := s.db.Exec("DELETE FROM parcel WHERE status = :status AND number = :number", sql.Named("status", ParcelStatusRegistered), sql.Named("number", number))
 	if err != nil {
 		return err
 	}
 
-	if status == ParcelStatusRegistered {
-		_, err = s.db.Exec("DELETE FROM parcel WHERE number = :number", sql.Named("number", number))
-		if err != nil {
-			return err
-		}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("посылка не найдена или имеет неверный статус")
 	}
 	return nil
 }
